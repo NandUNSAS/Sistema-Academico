@@ -204,4 +204,159 @@ Formulario HTML correspondiente:
 <form method="POST" action="{{ url_for('curso.eliminar_curso', curso_id=curso.curso_id) }}">
     <button type="submit">Eliminar</button>
 </form>
+```
+
+## 🧼 Mejora de Código Aplicando Principios de Clean Code
+
+Este informe documenta los cambios realizados para mejorar la legibilidad, mantenibilidad y claridad del código siguiendo los principios propuestos por Robert C. Martin en *Clean Code*.
+
+---
+
+### 1. Uso de Nombres Explícitos en Lugar de Abreviaturas
+
+**Práctica aplicada:**  
+Se evita el uso de abreviaturas como `impl` y se prefiere el uso completo como `implementation`.
+
+**Justificación:**  
+Los nombres explícitos mejoran la legibilidad y eliminan ambigüedad en equipos colaborativos o proyectos a largo plazo.
+
+**Antes:**
+```python
+self.impl.get_course_grades_report(course_id)
+````
+
+**Después:**
+
+```python
+self.reports_implementation.get_course_grades_report(course_identifier)
+```
+
+---
+
+### 2. Mejora de Nombres en Instancias y Parámetros
+
+**Práctica aplicada:**
+Reemplazo de nombres abreviados por nombres completos y con significado claro.
+
+**Cambios realizados:**
+
+| Nombre original | Reemplazo            | Justificación                                  |
+| --------------- | -------------------- | ---------------------------------------------- |
+| `grade_repo`    | `grade_repository`   | Indica que es un repositorio completo          |
+| `student_repo`  | `student_repository` | Explicita que gestiona entidades de estudiante |
+| `course_repo`   | `course_repository`  | Aclara que opera sobre cursos                  |
+| `course_id`     | `course_identifier`  | Precisa que es un identificador, no un objeto  |
+
+**Código ajustado:**
+
+```python
+class ReportsImplementation:
+    def __init__(self):
+        self.grade_repository = GradeRepository()
+        self.student_repository = StudentRepository()
+        self.course_repository = CourseRepository()
+
+    def get_course_grades_report(self, course_identifier: int):
+        ...
+```
+
+---
+
+### 3. Eliminación de Comentarios Redundantes
+
+**Práctica aplicada:**
+Eliminación de comentarios obvios que repiten lo que ya dice el código.
+
+**Antes:**
+
+```python
+# Ruta que llama a la función del controlador
+@reporte_bp.route('/curso/<int:course_id>', methods=['GET'])
+def course_report(curso_id):
+    return show_course_report(curso_id)
+```
+
+**Después:**
+
+```python
+@reporte_bp.route('/curso/<int:course_id>', methods=['GET'])
+def course_report(course_id):
+    return show_course_report(course_id)
+```
+
+---
+
+### 4. Separación de Responsabilidades en Funciones
+
+**Práctica aplicada:**
+Refactorización de una función grande en funciones más pequeñas que cumplen una única responsabilidad.
+
+**Antes:**
+
+```python
+def get_course_grades_report(self, course_identifier: int):
+    course = self.course_repository.get(course_identifier)
+    if not course:
+        return None
+
+    all_grades = self.grade_repository.list_all()
+    course_grades = [g for g in all_grades if g.course_id == course_identifier]
+
+    report_data = []
+    for grade in course_grades:
+        student = self.student_repository.get(grade.student_id)
+        report_data.append({
+            "student_id": student.user_id,
+            "score": grade.score
+        })
+
+    return {
+        "course_name": course.name,
+        "professor_id": course.professor_id,
+        "grades": report_data
+    }
+```
+
+**Después:**
+
+```python
+def get_course_grades_report(self, course_identifier: int):
+    course = self._get_course_or_none(course_identifier)
+    if not course:
+        return None
+
+    grades = self._get_grades_for_course(course_identifier)
+    report_data = self._build_report_data(grades)
+
+    return {
+        "course_name": course.name,
+        "professor_id": course.professor_id,
+        "grades": report_data
+    }
+
+def _get_course_or_none(self, course_identifier: int):
+    return self.course_repository.get(course_identifier)
+
+def _get_grades_for_course(self, course_identifier: int):
+    all_grades = self.grade_repository.list_all()
+    return [g for g in all_grades if g.course_id == course_identifier]
+
+def _build_report_data(self, grades):
+    report_data = []
+    for grade in grades:
+        student = self.student_repository.get(grade.student_id)
+        report_data.append({
+            "student_id": student.user_id,
+            "score": grade.score
+        })
+    return report_data
+```
+
+**Beneficios obtenidos:**
+
+* Las funciones son más cortas y claras.
+* Cada método tiene una única responsabilidad.
+* La legibilidad y el mantenimiento del código mejoran sustancialmente.
+* Se evita el uso de comentarios innecesarios gracias a nombres descriptivos.
+
 
